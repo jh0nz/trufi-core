@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:trufi_core_interfaces/trufi_core_interfaces.dart';
-import 'package:trufi_core_utils/trufi_core_utils.dart' show PackageInfoPlatform;
+import 'package:trufi_core_utils/trufi_core_utils.dart'
+    show PackageInfoPlatform;
 import 'package:url_launcher/url_launcher.dart';
 
 /// Application router using GoRouter with dynamic screen support
@@ -182,12 +183,11 @@ class AppShell extends StatelessWidget {
                   icon: const Icon(Icons.info_outline),
                   tooltip: 'About',
                   onPressed: () {
-                    // Navegar a la pantalla de About si existe
                     final aboutScreen = screens.firstWhere(
                       (s) => s.id == 'about',
                       orElse: () => screens.first,
                     );
-                    context.go(aboutScreen.path);
+                    _navigateToSection(context, aboutScreen.path);
                   },
                 ),
               ],
@@ -246,7 +246,12 @@ class AppDrawer extends StatelessWidget {
       child: Column(
         children: [
           // Modern header with layered design
-          _DrawerHeader(theme: theme, appName: appName, appTagline: appTagline, logo: logo),
+          _DrawerHeader(
+            theme: theme,
+            appName: appName,
+            appTagline: appTagline,
+            logo: logo,
+          ),
 
           const SizedBox(height: 8),
 
@@ -259,7 +264,11 @@ class AppDrawer extends StatelessWidget {
           ),
 
           // Modern footer
-          _DrawerFooter(theme: theme, socialMediaLinks: socialMediaLinks, extra: footerExtra),
+          _DrawerFooter(
+            theme: theme,
+            socialMediaLinks: socialMediaLinks,
+            extra: footerExtra,
+          ),
         ],
       ),
     );
@@ -293,8 +302,8 @@ class AppDrawer extends StatelessWidget {
           title: screen.getLocalizedTitle(context),
           isSelected: currentPath == screen.path,
           onTap: () {
-            Navigator.pop(context);
-            context.go(screen.path);
+            Scaffold.of(context).closeDrawer();
+            _navigateToSection(context, screen.path);
           },
         ),
       );
@@ -304,6 +313,31 @@ class AppDrawer extends StatelessWidget {
   }
 }
 
+/// Navigates to a top-level section, keeping `/` at the bottom of the stack
+/// so the system back button always returns to home.
+void _navigateToSection(BuildContext context, String path) {
+  final router = GoRouter.of(context);
+  final currentPath = router.routeInformationProvider.value.uri.path;
+
+  if (currentPath == path) return;
+
+  if (currentPath == '/') {
+    router.push(path);
+    return;
+  }
+
+  if (router.canPop()) {
+    router.pushReplacement(path);
+    return;
+  }
+
+  // Deep-linked into a section; reset stack to [/, path].
+  router.go('/');
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (context.mounted) router.push(path);
+  });
+}
+
 /// Modern drawer header with layered design
 class _DrawerHeader extends StatelessWidget {
   final ThemeData theme;
@@ -311,7 +345,12 @@ class _DrawerHeader extends StatelessWidget {
   final String? appTagline;
   final Widget? logo;
 
-  const _DrawerHeader({required this.theme, required this.appName, this.appTagline, this.logo});
+  const _DrawerHeader({
+    required this.theme,
+    required this.appName,
+    this.appTagline,
+    this.logo,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -331,7 +370,10 @@ class _DrawerHeader extends StatelessWidget {
             children: [
               // Logo/Avatar with modern styling
               logo != null
-                  ? ConstrainedBox(constraints: const BoxConstraints(maxHeight: 56), child: logo!)
+                  ? ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 56),
+                      child: logo!,
+                    )
                   : Container(
                       width: 56,
                       height: 56,
@@ -463,7 +505,11 @@ class _DrawerFooter extends StatelessWidget {
   final List<SocialMediaLink> socialMediaLinks;
   final Widget? extra;
 
-  const _DrawerFooter({required this.theme, this.socialMediaLinks = const [], this.extra});
+  const _DrawerFooter({
+    required this.theme,
+    this.socialMediaLinks = const [],
+    this.extra,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -480,10 +526,7 @@ class _DrawerFooter extends StatelessWidget {
       ),
       child: Column(
         children: [
-          if (extra != null) ...[
-            extra!,
-            const SizedBox(height: 12),
-          ],
+          if (extra != null) ...[extra!, const SizedBox(height: 12)],
           // Version info
           FutureBuilder<String>(
             future: PackageInfoPlatform.version(),
@@ -502,7 +545,9 @@ class _DrawerFooter extends StatelessWidget {
                   Text(
                     'v$version',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.6,
+                      ),
                     ),
                   ),
                 ],
@@ -579,14 +624,25 @@ class ErrorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(Localizations.localeOf(context).languageCode == 'es' ? 'Error' : 'Error')),
+      appBar: AppBar(
+        title: Text(
+          Localizations.localeOf(context).languageCode == 'es'
+              ? 'Error'
+              : 'Error',
+        ),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
-            Text(Localizations.localeOf(context).languageCode == 'es' ? 'Página no encontrada' : 'Page not found', style: TextStyle(fontSize: 24)),
+            Text(
+              Localizations.localeOf(context).languageCode == 'es'
+                  ? 'Página no encontrada'
+                  : 'Page not found',
+              style: TextStyle(fontSize: 24),
+            ),
             const SizedBox(height: 8),
             if (error != null)
               Text(
@@ -596,7 +652,11 @@ class ErrorScreen extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => context.go('/'),
-              child: Text(Localizations.localeOf(context).languageCode == 'es' ? 'Ir al inicio' : 'Go Home'),
+              child: Text(
+                Localizations.localeOf(context).languageCode == 'es'
+                    ? 'Ir al inicio'
+                    : 'Go Home',
+              ),
             ),
           ],
         ),
