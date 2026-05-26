@@ -873,18 +873,21 @@ class _PrivacySettingsCard extends StatelessWidget {
       iconColor: Colors.orange,
       title: settingsL10n.settingsPrivacy,
       subtitle: settingsL10n.settingsPrivacySubtitle,
-      child: _PrivacyToggleTile(
-        title: settingsL10n.settingsPrivacyShareData,
-        description: settingsL10n.settingsPrivacyShareDataDescription,
-        isEnabled: privacyConsentManager.isAccepted,
-        onToggle: (value) {
-          HapticFeedback.selectionClick();
-          if (value) {
-            privacyConsentManager.acceptConsent();
-          } else {
-            privacyConsentManager.declineConsent();
-          }
-        },
+      child: ListenableBuilder(
+        listenable: privacyConsentManager,
+        builder: (context, _) => _PrivacyToggleTile(
+          title: settingsL10n.settingsPrivacyShareData,
+          description: settingsL10n.settingsPrivacyShareDataDescription,
+          isEnabled: privacyConsentManager.isAccepted,
+          onToggle: (value) {
+            HapticFeedback.selectionClick();
+            if (value) {
+              privacyConsentManager.acceptConsent();
+            } else {
+              privacyConsentManager.declineConsent();
+            }
+          },
+        ),
       ),
     );
   }
