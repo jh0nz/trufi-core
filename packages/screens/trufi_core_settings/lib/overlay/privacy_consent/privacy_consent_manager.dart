@@ -115,6 +115,16 @@ class PrivacyConsentManager extends AppOverlayManager {
     notifyListeners();
   }
 
+  /// Re-shows the consent overlay regardless of whether it was previously shown.
+  void showConsentOverlay() {
+    if (overlayBuilder == null || _overlayService == null) return;
+    if (_overlayService!.hasOverlayWithId(_overlayId)) return;
+    _overlayService!.pushOverlay(
+      child: overlayBuilder!(_onAccept, _onDecline),
+      id: _overlayId,
+    );
+  }
+
   /// Resets consent state (useful for testing)
   Future<void> reset() async {
     final prefs = await SharedPreferences.getInstance();

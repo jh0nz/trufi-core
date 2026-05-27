@@ -878,7 +878,7 @@ class _PrivacySettingsCard extends StatelessWidget {
         onToggle: (value) {
           HapticFeedback.selectionClick();
           if (value) {
-            privacyConsentManager.acceptConsent();
+            privacyConsentManager.showConsentOverlay();
           } else {
             privacyConsentManager.declineConsent();
           }
